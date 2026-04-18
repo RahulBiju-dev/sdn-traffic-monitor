@@ -26,21 +26,21 @@ The chosen design satisfies the problem requirements by clearly showing controll
 ```
                     ┌──────────────────────────────────┐
                     │       Ryu Controller (c0)        │
-                    │       127.0.0.1:6633              │
+                    │       127.0.0.1:6633             │
                     │   ┌────────────────────────┐     │
-                    │   │  TrafficMonitorApp      │     │
-                    │   │  - Learning Switch      │     │
-                    │   │  - Firewall (DROP)       │     │
-                    │   │  - Stats Polling (10s)   │     │
+                    │   │  TrafficMonitorApp     │     │
+                    │   │  - Learning Switch     │     │
+                    │   │  - Firewall (DROP)     │     │
+                    │   │  - Stats Polling (10s) │     │
                     │   └────────────────────────┘     │
-                    └──────────┬───────────┬───────────┘
+                    └──────────┬───────────────┬───────┘
                          OpenFlow 1.3   OpenFlow 1.3
                                │               │
-    h1 (10.0.0.1) ─┐          │               │          ┌─ h3 (10.0.0.3)
+    h1 (10.0.0.1)  ─┐          │               │          ┌─ h3 (10.0.0.3)
     MAC: ...:01     ├── [ s1 ] ┘               └── [ s2 ] ┤  MAC: ...:03
-    h2 (10.0.0.2) ─┘    │          10 Mbps          │    └─ h4 (10.0.0.4)
-    MAC: ...:02          └──────────────────────────┘       MAC: ...:04
-                              Backbone Link
+    h2 (10.0.0.2)  ─┘    │          10 Mbps         │     └─ h4 (10.0.0.4)
+    MAC: ...:02          └──────────────────────────┘        MAC: ...:04
+                                 Backbone Link
 ```
 
 ### How It Works
