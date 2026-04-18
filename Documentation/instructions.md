@@ -1,177 +1,91 @@
-# Testing Instructions (Phase 3, 4 & 5)
+# Project Demo Guide
 
-This file contains the step-by-step commands you need to run to verify that the controller and the topology are working as expected and to capture the evidence required for Phase 5.
+This file outlines the sequential commands to run a full demonstration of the SDN Traffic Monitor project. This workflow will launch the controller, build the custom topology, verify switch connectivity, generate traffic, test firewall controls, and inspect OpenFlow flow tables.
 
-### Terminal 1: Start the Controller
-Start the Ryu controller and log its output to both the terminal and a file for later analysis.
+### 1. Start the Controller
+
+Open **Terminal 1** and start the Ryu application:
 
 ```bash
 cd ~/Projects/sdn-traffic-monitor
-ryu-manager controller/traffic_monitor.py 2>&1 | tee logs/controller.log
+ryu-manager controller/traffic_monitor.py
 ```
 
-*Note: Leave this terminal running. You should see it periodically outputting stats once switches connect.*
+*Note: Leave this terminal running to observe proactive logging every 10 seconds.*
 
-### Terminal 2: Start the Mininet Topology
-With the controller running, open a second terminal to start your custom Mininet topology.
+### 2. Start the Mininet Topology
+
+Open **Terminal 2** and launch the custom Mininet topology script:
 
 ```bash
 cd ~/Projects/sdn-traffic-monitor
 sudo python3 topology/topo.py
 ```
 
-*Wait for Mininet to start up and drop you into the `mininet>` prompt.*
+*Wait for the `mininet>` prompt to appear. The switches are now establishing an OpenFlow 1.3 connection with the Ryu controller.*
 
 ---
 
-## Phase 5: Testing Scenarios & Evidence Capture
+## 3. Traffic and Firewall Demonstration
 
-You must capture specific logs and outputs to the `screenshots/` directory as proof of functional correctness.
+Inside the Mininet CLI (`mininet>`), run the following commands sequentially:
 
-### Scenario 1: Normal Traffic (Allowed Flow)
-**Purpose:** Demonstrate learning-switch forwarding and statistic generation.
-
-1. **Ping All Hosts:**
-   Inside the Mininet CLI:
-   ```bash
-   mininet> pingall
-   ```
-   *Expected: All succeed except h2 -> h3.*
-
-2. **Generate Throughput (h1 to h3):**
-   In Mininet CLI:
-   ```bash
-   mininet> h1 iperf3 -s &
-   mininet> h3 iperf3 -c 10.0.0.1 -t 15 > iperf_temp.txt
-   ```
-
-3. **Capture Evidence (Terminal 3):**
-   Open a third terminal and run:
-   ```bash
-   ./tests/test_scenario_1.sh
-   ```
-   *Expected: Flow tables and iperf results (if saved to iperf_temp.txt) are moved to screenshots/ folder.*
-
-### Scenario 2: Blocked Traffic (Firewall Rule)
-**Purpose:** Demonstrate that the h2 -> h3 drop rule is active and specifically targeting that pair.
-
-1. **Allowed Ping (h1 -> h3):**
-   ```bash
-   mininet> h1 ping -c 4 h3
-   ```
-   *Expected: 0% packet loss.*
-
-2. **Blocked Ping (h2 -> h3):**
-   ```bash
-   mininet> h2 ping -c 4 h3
-   ```
-   *Expected: 100% packet loss.*
-
-3. **Capture Evidence (Terminal 3):**
-   ```bash
-   ./tests/test_scenario_2.sh
-   ```
-   *Expected: The DROP rule (priority 10) is extracted from s1 and saved.*
-
----
-
-### Automated Test Scripts
-The scripts in `tests/` automate the capture of OpenFlow tables. For traffic logs (iperf/ping), please follow the redirection instructions within the Mininet CLI or the script output.
-
----
-
-## Phase 6: Performance Observation & Analysis
-
-**Goal:** Capture concrete latency, throughput, and flow table metrics. You need the controller and topology running (same Terminal 1 & 2 as above).
-
-> **Important:** Start with a FRESH Mininet session (exit and restart both controller and topology) so the "before traffic" tables are clean.
-
-### Step 1: Before-Traffic Flow Tables
-Immediately after Mininet starts (before running any pings), run in **Terminal 3**:
+**Step A: Verify End-to-End Connectivity and Firewall Rules**
+Run a full ping test across all hosts:
 ```bash
-cd ~/Projects/sdn-traffic-monitor
-./tests/test_phase6_perf.sh before
+mininet> pingall
 ```
-*Expected: Only the table-miss entry (priority=0) should exist per switch.*
+*Expected Result: All pings should succeed EXCEPT for `h2` communicating with `h3`. The controller dynamically drops their packets (X).*
 
-### Step 2: Latency Measurement (First Run — Cold)
-In the **Mininet CLI**:
+**Step B: Test Blocked Traffic (h2 to h3)**
+Perform an explicit ping test for the prohibited host pair:
 ```bash
-mininet> h1 ping -c 20 h4
+mininet> h2 ping -c 4 h3
 ```
-📸 **Screenshot this output** — save or note the min/avg/max/mdev RTT line.
+*Expected Result: 100% packet loss.*
 
-### Step 3: Latency Measurement (Second Run — Warm)
-Run the exact same ping immediately after:
+**Step C: Test Allowed Traffic (h1 to h3)**
+Perform a ping test for a permitted host pair to prove routing works:
 ```bash
-mininet> h1 ping -c 20 h4
+mininet> h1 ping -c 4 h3
 ```
-📸 **Screenshot this output** — the average RTT should be noticeably lower because flow rules are now installed in the switch.
+*Expected Result: 0% packet loss.*
 
-### Step 4: Throughput Measurement (h1 ↔ h4)
+**Step D: Measure Throughput (h1 to h4)**
+Run a 15-second multi-stream TCP bandwidth test from `h1` to `h4`:
 ```bash
 mininet> h4 iperf3 -s &
-mininet> h1 iperf3 -c 10.0.0.4 -t 30 -i 5
+mininet> h1 iperf3 -c 10.0.0.4 -t 15
 ```
-📸 **Screenshot this output** — throughput should stabilise around 8–10 Mbps.
-
-### Step 5: Throughput Measurement (h1 ↔ h3, cross-switch)
-```bash
-mininet> h3 iperf3 -s &
-mininet> h1 iperf3 -c 10.0.0.3 -t 30 -i 5
-```
-📸 **Screenshot this output** — compare with h1↔h4 throughput.
-
-### Step 6: After-Traffic Flow Tables
-After generating all traffic, run in **Terminal 3**:
-```bash
-cd ~/Projects/sdn-traffic-monitor
-./tests/test_phase6_perf.sh after
-```
-
-### Step 7: Compare Before vs After
-```bash
-./tests/test_phase6_perf.sh diff
-```
-📸 **Screenshot the diff output** — this shows the flow rules that were dynamically installed.
-
-### Step 8: Check Controller Logs
-Wait for 2–3 monitoring cycles (~20–30 seconds), then inspect the stats log:
-```bash
-cat logs/stats_1.log
-cat logs/stats_2.log
-```
-📸 **Screenshot these** — you should see identical flow entries appearing across multiple cycles with increasing packet/byte counts.
+*Expected Result: A bandwidth capacity close to the topology's 10 Mbps configured link limit.*
 
 ---
 
-## Phase 7: Final Submission Checklist
+## 4. Flow Table Verification
 
-Before your final commit and push, verify the following:
+Open **Terminal 3** to inspect the OpenFlow tables injected into the OVS switches by our Ryu application. 
 
-- [ ] Ryu and Mininet both launch without errors
-- [ ] `pingall` shows 0% loss for all non-blocked pairs
-- [ ] `h2 ping h3` shows 100% packet loss
-- [ ] Controller terminal prints stats every ~10 seconds
-- [ ] `logs/stats_<dpid>.log` has increasing counts across cycles
-- [ ] `screenshots/` folder contains evidence for both scenarios AND before/after flow tables
-- [ ] `README.md` contains all 8 required sections
-- [ ] GitHub repository is set to **Public**
-- [ ] `git log` shows clean, phase-by-phase commit history
-
-### Final Commit
+**Step A: Inspect Switch 1 (s1)**
+Look at the flow priorities and matching rules:
 ```bash
-cd ~/Projects/sdn-traffic-monitor
-git add .
-git commit -m "Phase 6 & 7: Performance analysis and final documentation"
-git push origin main
+sudo ovs-ofctl dump-flows s1 -O OpenFlow13
 ```
+*Expected Result: You should see the default table-miss entry (priority 0), successfully cached MAC forwarding flows (priority 5), and the explicit drop rule for `h2` and `h3` (priority 10 with no output actions).*
 
-### Verify Public Access
-Open a **private/incognito browser window** and navigate to:
-`https://github.com/RahulBiju-dev/sdn-traffic-monitor`
+**Step B: Inspect Switch 2 (s2)**
+```bash
+sudo ovs-ofctl dump-flows s2 -O OpenFlow13
+```
+*Expected Result: Similar dynamically learned forwarding flows based on source and destination MACs.*
 
-Confirm the repository is visible without logging in.
+---
 
-### Wrap Up
-When finished testing, return to Terminal 2 (Mininet CLI) and type `exit`. To stop the controller in Terminal 1, press `Ctrl+C`.
+### 5. Wrap Up
+
+Once the demonstration is complete:
+1. In **Terminal 2** (Mininet CLI), type `exit` to close Mininet.
+2. In **Terminal 1**, press `Ctrl+C` to terminate the Ryu controller.
+3. If necessary, clean up lingering Mininet processes:
+   ```bash
+   sudo mn -c
+   ```

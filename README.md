@@ -120,6 +120,11 @@ cookie=0x0, duration=25.789s, table=0, n_packets=3, n_bytes=294, priority=10,dl_
 | 2 | `h1 iperf3 -s &` then `h3 iperf3 -c 10.0.0.1 -t 15` | ~8–10 Mbps throughput |
 | 3 | `ovs-ofctl dump-flows s1` | Multiple priority=5 forwarding rules visible |
 
+![Mininet Pingall Output](screenshots/pingall_mn.png)
+
+*Figure 1: Mininet `pingall` results showing connectivity between all hosts except the blocked h2-h3 pair.*
+
+
 ### Scenario 2: Blocked Traffic (DROP Rule)
 
 | Step | Command | Expected Result |
@@ -128,26 +133,51 @@ cookie=0x0, duration=25.789s, table=0, n_packets=3, n_bytes=294, priority=10,dl_
 | 2 | `h2 ping -c 4 h3` | 100% packet loss (blocked) |
 | 3 | `ovs-ofctl dump-flows s1 \| grep priority=10` | DROP rule with empty actions for h2→h3 |
 
+![Allowed Ping h1-h3](screenshots/allowed_ping_h1_h3.png)
+*Figure 2: Successful ICMP communication between h1 and h3 (Allowed).*
+
+![Blocked Ping h2-h3](screenshots/blocked_ping_h2_h3.png)
+*Figure 3: 100% packet loss for h2 to h3 traffic (Blocked by Firewall Rule).*
+
+
 ---
 
 ## 6. Performance Results
 
-> **Note:** Fill in the values below after running  the Phase 6 measurements on your VM. Placeholder values shown for format reference.
-
 | Metric | Value |
 |--------|-------|
-| h1 → h4 Avg RTT (1st run, cold) | ___ ms |
-| h1 → h4 Avg RTT (2nd run, warm) | ___ ms |
-| h1 → h4 Throughput (30s iperf) | ___ Mbps |
-| h1 → h3 Throughput (30s iperf, cross-switch) | ___ Mbps |
+| h1 → h4 Avg RTT (1st run, cold) | 0.112 ms |
+| h1 → h4 Avg RTT (2nd run, warm) | 0.094 ms |
+| h1 → h4 Throughput (30s iperf) | 9.56 Mbps |
+| h1 → h3 Throughput (30s iperf, cross-switch) | 9.55 Mbps |
+
+### Latency and Throughput Analysis
+
+![Latency Measurement - Cold vs Warm](screenshots/performance_diff.png)
+*Figure 4: Latency comparison showing the benefit of flow entry caching.*
 
 **RTT Observation:** The first ping run has higher latency because every packet triggers a `packet_in` event to the controller. The second run is faster because flow rules are already installed in the switch datapath, so packets are forwarded locally without controller involvement.
 
-### Packet Count Across Monitoring Cycles
+![Latency Cold Start](screenshots/latency_measurement1.png)
+*Figure 5: High latency (Cold Start) during initial flow rule installation.*
 
-| Flow Entry | Cycle 1 Packets | Cycle 2 Packets | Byte Delta |
-|------------|-----------------|-----------------|------------|
-| _example match_ | ___ | ___ | ___ |
+![Latency Warm Start](screenshots/latency_measurement2.png)
+*Figure 6: Low latency (Warm Start) after flow rule installation.*
+
+### Throughput Performance
+
+![Throughput h1 to h3](screenshots/throughput_h1_h3.png)
+*Figure 7: Iperf3 throughput between h1 and h3 (Cross-Switch link).*
+
+![Throughput h1 to h4](screenshots/throughput_h1_h4.png)
+*Figure 8: Iperf3 throughput between h1 and h4.*
+
+![Iperf Server h1](screenshots/h1_iperf.png)
+*Figure 9: Iperf3 server running on h1.*
+
+![Iperf Client h3](screenshots/h3_iperf.png)
+*Figure 10: Iperf3 client running on h3 reaching h1.*
+
 
 ---
 
@@ -160,13 +190,18 @@ cookie=0x0, duration=25.789s, table=0, n_packets=3, n_bytes=294, priority=10,dl_
 | `screenshots/blocked_ping_h2_h3.png` | Blocked ping from h2 to h3 (100% loss) |
 | `screenshots/h1_iperf.png` | iperf3 server output on h1 |
 | `screenshots/h3_iperf.png` | iperf3 client output from h3 |
-| `screenshots/scenario1_flow_table.txt` | Flow table dump for Scenario 1 |
-| `screenshots/scenario1_iperf.txt` | iperf text output for Scenario 1 |
-| `screenshots/scenario2_flow_table.txt` | Flow table dump showing DROP rule |
-| `screenshots/s1_before_traffic.txt` | s1 flow table before any traffic (Phase 6) |
-| `screenshots/s2_before_traffic.txt` | s2 flow table before any traffic (Phase 6) |
-| `screenshots/s1_after_traffic.txt` | s1 flow table after traffic generation (Phase 6) |
-| `screenshots/s2_after_traffic.txt` | s2 flow table after traffic generation (Phase 6) |
+| `screenshots/throughput_h1_h3.png` | Throughput graph/log for h1 to h3 |
+| `screenshots/throughput_h1_h4.png` | Throughput graph/log for h1 to h4 |
+| `screenshots/latency_measurement1.png` | Cold start RTT measurement |
+| `screenshots/latency_measurement2.png` | Warm start RTT measurement |
+| `screenshots/performance_diff.png` | Latency improvement comparison |
+| `logs/scenario1_flow_table.txt` | Flow table dump for Scenario 1 |
+| `logs/scenario1_iperf.txt` | iperf text output for Scenario 1 |
+| `logs/scenario2_flow_table.txt` | Flow table dump showing DROP rule |
+| `logs/s1_before_traffic.txt` | s1 flow table before any traffic (Phase 6) |
+| `logs/s2_before_traffic.txt` | s2 flow table before any traffic (Phase 6) |
+| `logs/s1_after_traffic.txt` | s1 flow table after traffic generation (Phase 6) |
+| `logs/s2_after_traffic.txt` | s2 flow table after traffic generation (Phase 6) |
 
 ---
 
