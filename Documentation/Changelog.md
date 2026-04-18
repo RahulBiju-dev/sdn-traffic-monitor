@@ -37,10 +37,17 @@ Agent Context: **@sdn_dev, @documenter, @professor**
 
 ---
 
-## Implementation Context for Phase 3 (Next)
-- **Target:** `controller/traffic_monitor.py`
-- **Required Logic:** 
-    - MAC learning switch.
-    - Match-action flows (Forwarding + Drop).
-    - Hard-coded blocking of `h2` to `h3` traffic.
-- **Agent Action:** `@sdn_dev` to implement `traffic_monitor.py`.
+## Phase 3 & 4: Controller Logic & Monitoring (`controller/traffic_monitor.py`)
+- **Status:** [x] Code Complete | [ ] Awaiting Manual Verification
+- **Date:** 2026-04-18
+- **Files Modified:**
+    - `[NEW] controller/traffic_monitor.py`
+    - `[NEW] logs/.gitkeep`
+    - `[NEW] Documentation/instructions.md`
+- **Architecture State:**
+    - **Learning Switch:** MAC-to-port mapping logic implemented.
+    - **Firewall Rules:** Hardcoded constraint explicitly dropping packets where `src_mac=00:00:00:00:00:02` (h2) and `dst_mac=00:00:00:00:00:03` (h3).
+    - **Monitoring Subsystem:** Ryu `hub` green thread spawns dynamically tracking all active datapaths, fetching matching and flow statistics, saving it out to `logs/stats_<dpid>.log` every 10 seconds.
+- **Agent Instructions:** 
+    - **Testing:** The `@documenter` profile has emitted a new validation guide located in `Documentation/instructions.md`.
+    - **Next Phase:** The user will manually deploy the instances into Mininet. Once they report successful operations from Scenario 1 and 2, phase 5 testing handles saving packet captures and performance data for `@professor` analysis!
