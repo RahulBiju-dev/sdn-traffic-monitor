@@ -78,7 +78,100 @@ You must capture specific logs and outputs to the `screenshots/` directory as pr
 ### Automated Test Scripts
 The scripts in `tests/` automate the capture of OpenFlow tables. For traffic logs (iperf/ping), please follow the redirection instructions within the Mininet CLI or the script output.
 
+---
+
+## Phase 6: Performance Observation & Analysis
+
+**Goal:** Capture concrete latency, throughput, and flow table metrics. You need the controller and topology running (same Terminal 1 & 2 as above).
+
+> **Important:** Start with a FRESH Mininet session (exit and restart both controller and topology) so the "before traffic" tables are clean.
+
+### Step 1: Before-Traffic Flow Tables
+Immediately after Mininet starts (before running any pings), run in **Terminal 3**:
+```bash
+cd ~/Projects/sdn-traffic-monitor
+./tests/test_phase6_perf.sh before
+```
+*Expected: Only the table-miss entry (priority=0) should exist per switch.*
+
+### Step 2: Latency Measurement (First Run — Cold)
+In the **Mininet CLI**:
+```bash
+mininet> h1 ping -c 20 h4
+```
+📸 **Screenshot this output** — save or note the min/avg/max/mdev RTT line.
+
+### Step 3: Latency Measurement (Second Run — Warm)
+Run the exact same ping immediately after:
+```bash
+mininet> h1 ping -c 20 h4
+```
+📸 **Screenshot this output** — the average RTT should be noticeably lower because flow rules are now installed in the switch.
+
+### Step 4: Throughput Measurement (h1 ↔ h4)
+```bash
+mininet> h4 iperf3 -s &
+mininet> h1 iperf3 -c 10.0.0.4 -t 30 -i 5
+```
+📸 **Screenshot this output** — throughput should stabilise around 8–10 Mbps.
+
+### Step 5: Throughput Measurement (h1 ↔ h3, cross-switch)
+```bash
+mininet> h3 iperf3 -s &
+mininet> h1 iperf3 -c 10.0.0.3 -t 30 -i 5
+```
+📸 **Screenshot this output** — compare with h1↔h4 throughput.
+
+### Step 6: After-Traffic Flow Tables
+After generating all traffic, run in **Terminal 3**:
+```bash
+cd ~/Projects/sdn-traffic-monitor
+./tests/test_phase6_perf.sh after
+```
+
+### Step 7: Compare Before vs After
+```bash
+./tests/test_phase6_perf.sh diff
+```
+📸 **Screenshot the diff output** — this shows the flow rules that were dynamically installed.
+
+### Step 8: Check Controller Logs
+Wait for 2–3 monitoring cycles (~20–30 seconds), then inspect the stats log:
+```bash
+cat logs/stats_1.log
+cat logs/stats_2.log
+```
+📸 **Screenshot these** — you should see identical flow entries appearing across multiple cycles with increasing packet/byte counts.
+
+---
+
+## Phase 7: Final Submission Checklist
+
+Before your final commit and push, verify the following:
+
+- [ ] Ryu and Mininet both launch without errors
+- [ ] `pingall` shows 0% loss for all non-blocked pairs
+- [ ] `h2 ping h3` shows 100% packet loss
+- [ ] Controller terminal prints stats every ~10 seconds
+- [ ] `logs/stats_<dpid>.log` has increasing counts across cycles
+- [ ] `screenshots/` folder contains evidence for both scenarios AND before/after flow tables
+- [ ] `README.md` contains all 8 required sections
+- [ ] GitHub repository is set to **Public**
+- [ ] `git log` shows clean, phase-by-phase commit history
+
+### Final Commit
+```bash
+cd ~/Projects/sdn-traffic-monitor
+git add .
+git commit -m "Phase 6 & 7: Performance analysis and final documentation"
+git push origin main
+```
+
+### Verify Public Access
+Open a **private/incognito browser window** and navigate to:
+`https://github.com/RahulBiju-dev/sdn-traffic-monitor`
+
+Confirm the repository is visible without logging in.
 
 ### Wrap Up
 When finished testing, return to Terminal 2 (Mininet CLI) and type `exit`. To stop the controller in Terminal 1, press `Ctrl+C`.
-

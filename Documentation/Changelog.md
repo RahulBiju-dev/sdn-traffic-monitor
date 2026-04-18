@@ -1,6 +1,6 @@
 # Agent-Oriented Project Changelog
 
-Project Status: **Phase 5 Complete**
+Project Status: **Phase 7 Complete**
 Target Environment: **Ubuntu VM (SDN-ready)**
 Agent Context: **@sdn_dev, @documenter, @professor**
 
@@ -68,3 +68,32 @@ Agent Context: **@sdn_dev, @documenter, @professor**
 - **Agent Instructions:** 
     - **Viva Preparation:** Move to `@professor` profile to generate viva questions once the user has confirmed the test results.
     - **Analysis:** Proceed to Phase 6 (Performance Observation) after verification.
+
+---
+
+## Phase 6: Performance Observation & Analysis
+- **Status:** [x] Scripts Ready | [ ] Awaiting User Measurements on VM
+- **Date:** 2026-04-18
+- **Files Modified:**
+    - `[NEW] tests/test_phase6_perf.sh`
+- **Technical State:**
+    - Helper script created to capture before/after flow tables and produce diffs.
+    - `Documentation/instructions.md` updated with step-by-step Phase 6 measurement commands.
+    - Performance results table added to `README.md` with placeholder values for the user to fill in after running measurements.
+- **Agent Instructions:**
+    - **User Action Required:** Run the Phase 6 steps in `Documentation/instructions.md` on the VM, capture screenshots, and fill in the performance results table in `README.md`.
+
+---
+
+## Phase 7: Documentation & Submission
+- **Status:** [x] README Complete | [ ] Awaiting Final Push
+- **Date:** 2026-04-18
+- **Files Modified:**
+    - `[MODIFIED] README.md` — Full rewrite with all 8 required sections.
+    - `[MODIFIED] Documentation/instructions.md` — Phase 6 & 7 instructions added.
+    - `[MODIFIED] Documentation/Changelog.md` — Updated to reflect all phases.
+- **Technical State:**
+    - README contains: Problem Statement, Architecture (ASCII diagram), Setup Steps, Expected Output, Test Scenarios, Performance Results (placeholder), Screenshots/Logs index, References.
+    - Final submission checklist included in `Documentation/instructions.md`.
+- **Agent Instructions:**
+    - **User Action Required:** Fill in the performance results table in `README.md` after completing Phase 6 measurements, then run the final commit and push.
