@@ -1,13 +1,13 @@
-# Testing Instructions (Phase 3 & 4)
+# Testing Instructions (Phase 3, 4 & 5)
 
-This file contains the step-by-step commands you need to run to verify that the controller and the topology are working as expected. You will need at least three separate terminal windows open on your VM.
+This file contains the step-by-step commands you need to run to verify that the controller and the topology are working as expected and to capture the evidence required for Phase 5.
 
 ### Terminal 1: Start the Controller
-First, start the Ryu controller so it acts as the "brain" and listens on port 6633.
+Start the Ryu controller and log its output to both the terminal and a file for later analysis.
 
 ```bash
 cd ~/Projects/sdn-traffic-monitor
-ryu-manager controller/traffic_monitor.py
+ryu-manager controller/traffic_monitor.py 2>&1 | tee logs/controller.log
 ```
 
 *Note: Leave this terminal running. You should see it periodically outputting stats once switches connect.*
@@ -22,52 +22,63 @@ sudo python3 topology/topo.py
 
 *Wait for Mininet to start up and drop you into the `mininet>` prompt.*
 
-### Scenario 1: Normal Traffic & Learning Switch
-Inside the **Mininet** CLI (Terminal 2), run the following:
+---
+
+## Phase 5: Testing Scenarios & Evidence Capture
+
+You must capture specific logs and outputs to the `screenshots/` directory as proof of functional correctness.
+
+### Scenario 1: Normal Traffic (Allowed Flow)
+**Purpose:** Demonstrate learning-switch forwarding and statistic generation.
 
 1. **Ping All Hosts:**
+   Inside the Mininet CLI:
    ```bash
-   pingall
+   mininet> pingall
    ```
-   *Expected: Everyone should be able to ping each other, EXCEPT h2 to h3 (which we blocked in Phase 3!). If `pingall` shows some dropped packets, it's correct!*
+   *Expected: All succeed except h2 -> h3.*
 
-2. **Test Bandwidth (h1 to h3):**
+2. **Generate Throughput (h1 to h3):**
+   In Mininet CLI:
    ```bash
-   h1 iperf3 -s &
-   h3 iperf3 -c 10.0.0.1 -t 15
+   mininet> h1 iperf3 -s &
+   mininet> h3 iperf3 -c 10.0.0.1 -t 15 > iperf_temp.txt
    ```
-   *Expected: Throughput should be around 10 Mbps (due to `TCLink` limits).*
 
-### Scenario 2: Firewall / Blocked Traffic Test
-Inside the **Mininet** CLI (Terminal 2), run:
+3. **Capture Evidence (Terminal 3):**
+   Open a third terminal and run:
+   ```bash
+   ./tests/test_scenario_1.sh
+   ```
+   *Expected: Flow tables and iperf results (if saved to iperf_temp.txt) are moved to screenshots/ folder.*
+
+### Scenario 2: Blocked Traffic (Firewall Rule)
+**Purpose:** Demonstrate that the h2 -> h3 drop rule is active and specifically targeting that pair.
 
 1. **Allowed Ping (h1 -> h3):**
    ```bash
-   h1 ping -c 4 h3
+   mininet> h1 ping -c 4 h3
    ```
-   *Expected: 4 packets transmitted, 4 received, 0% packet loss.*
+   *Expected: 0% packet loss.*
 
 2. **Blocked Ping (h2 -> h3):**
    ```bash
-   h2 ping -c 4 h3
+   mininet> h2 ping -c 4 h3
    ```
-   *Expected: 4 packets transmitted, 0 received, 100% packet loss.*
+   *Expected: 100% packet loss.*
 
-### Terminal 3: Verify Flow Tables & Stats
-Open a third terminal alongside your running Mininet and Controller.
-
-1. **Dump Flow Tables for Switch 1 (s1):**
+3. **Capture Evidence (Terminal 3):**
    ```bash
-   sudo ovs-ofctl -O OpenFlow13 dump-flows s1
+   ./tests/test_scenario_2.sh
    ```
-   *Expected: Look for a flow entry with `priority=10` containing the DROP rule for the h2 MAC -> h3 MAC.*
+   *Expected: The DROP rule (priority 10) is extracted from s1 and saved.*
 
-2. **Verify Background Polling Logs:**
-   ```bash
-   cat logs/stats_1.log
-   cat logs/stats_2.log
-   ```
-   *Expected: Lines of comma-separated data tracking packets over time.*
+---
+
+### Automated Test Scripts
+The scripts in `tests/` automate the capture of OpenFlow tables. For traffic logs (iperf/ping), please follow the redirection instructions within the Mininet CLI or the script output.
+
 
 ### Wrap Up
 When finished testing, return to Terminal 2 (Mininet CLI) and type `exit`. To stop the controller in Terminal 1, press `Ctrl+C`.
+

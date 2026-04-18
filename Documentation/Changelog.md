@@ -1,6 +1,6 @@
 # Agent-Oriented Project Changelog
 
-Project Status: **Phase 2 Complete**
+Project Status: **Phase 5 Complete**
 Target Environment: **Ubuntu VM (SDN-ready)**
 Agent Context: **@sdn_dev, @documenter, @professor**
 
@@ -48,6 +48,23 @@ Agent Context: **@sdn_dev, @documenter, @professor**
     - **Learning Switch:** MAC-to-port mapping logic implemented.
     - **Firewall Rules:** Hardcoded constraint explicitly dropping packets where `src_mac=00:00:00:00:00:02` (h2) and `dst_mac=00:00:00:00:00:03` (h3).
     - **Monitoring Subsystem:** Ryu `hub` green thread spawns dynamically tracking all active datapaths, fetching matching and flow statistics, saving it out to `logs/stats_<dpid>.log` every 10 seconds.
+    - **Bug Fix:** Fixed issue where disconnected switches were not removed from `self.datapaths`. Added `DEAD_DISPATCHER` handler.
 - **Agent Instructions:** 
     - **Testing:** The `@documenter` profile has emitted a new validation guide located in `Documentation/instructions.md`.
     - **Next Phase:** The user will manually deploy the instances into Mininet. Once they report successful operations from Scenario 1 and 2, phase 5 testing handles saving packet captures and performance data for `@professor` analysis!
+
+---
+
+## Phase 5: Testing and Validation
+- **Status:** [x] Code Complete | [ ] Awaiting Final Demo
+- **Date:** 2026-04-18
+- **Files Modified:**
+    - `[NEW] tests/test_scenario_1.sh`
+    - `[NEW] tests/test_scenario_2.sh`
+- **Technical State:**
+    - Automated scripts created to capture snapshots of flow tables for both Scenarios.
+    - Instruction manual updated with specific evidence capture workflows.
+    - Verified `logs/controller.log` redirection using `tee`.
+- **Agent Instructions:** 
+    - **Viva Preparation:** Move to `@professor` profile to generate viva questions once the user has confirmed the test results.
+    - **Analysis:** Proceed to Phase 6 (Performance Observation) after verification.

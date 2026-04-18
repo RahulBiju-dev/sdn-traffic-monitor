@@ -5,7 +5,7 @@ import os
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
-from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
+from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
@@ -36,16 +36,17 @@ class TrafficMonitorApp(app_manager.RyuApp):
         # Phase 4: Start background monitoring thread
         self.monitor_thread = hub.spawn(self._monitor)
 
-    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, CONFIG_DISPATCHER])
+    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
         datapath = ev.datapath
         if ev.state == MAIN_DISPATCHER:
             if datapath.id not in self.datapaths:
-                self.logger.debug(f'Registering datapath: {datapath.id}')
+                self.logger.info(f'Switch connected: {datapath.id}')
                 self.datapaths[datapath.id] = datapath
-        elif ev.state == datapath.id in self.datapaths:
-            self.logger.debug(f'Unregistering datapath: {datapath.id}')
-            del self.datapaths[datapath.id]
+        elif ev.state == DEAD_DISPATCHER:
+            if datapath.id in self.datapaths:
+                self.logger.info(f'Switch disconnected: {datapath.id}')
+                del self.datapaths[datapath.id]
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
