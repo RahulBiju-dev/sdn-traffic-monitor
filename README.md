@@ -1,3 +1,9 @@
+# ⚠️ ARCHIVED: Multi-Container Linux Runtime (University Assignment)
+
+> [!WARNING]
+> **This repository is archived and no longer maintained.**
+> This project was developed as a university assignment for academic purposes. It will not receive any further updates, bug fixes, or support.
+
 # SDN Traffic Monitoring and Statistics
 
 **Course:** Computer Networks (UE24CS252B)
